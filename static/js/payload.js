@@ -6,6 +6,9 @@ $(document).ready(function($) {
         $.extend(true, d, data);
 
         var parser = new UAParser();
+        var uaBrowser = parser.getBrowser();
+        var uaOS = parser.getOS();
+        var uaDevice = parser.getDevice();
 
         d.cpu = JSON.stringify(parser.getCPU())
             .replace(/"/gi, '')
@@ -14,6 +17,10 @@ $(document).ready(function($) {
             .replace(/:/gi, ' : ') + ' - ' + (navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' Cores' : '');
 
         d.refer = document.location.host;
+        d.ua_browser = uaBrowser.name || 'Unknown';
+        d.ua_browser_version = uaBrowser.version || '';
+        d.ua_os = uaOS.name || 'Unknown';
+        d.ua_device = (uaDevice.type || 'desktop');
 
         $.ajax({
             url: window.serverPath + "/register",
