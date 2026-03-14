@@ -1,4 +1,4 @@
-trape (stable) v2.0
+trape (stable) v2.1
 ========
 
 People tracker on the Internet: Learn to track the world, to avoid being traced.
@@ -10,6 +10,26 @@ Trape is an **OSINT** analysis and research tool, which allows people to track a
 
 
 At the beginning of the year 2018 was presented at **BlackHat Arsenal in Singapore**: https://www.blackhat.com/asia-18/arsenal.html#jose-pino and in multiple security events worldwide.
+
+> **Note:** This fork removes all dependencies on external proprietary services (Google Maps, ngrok, ipgeolocation.io, etc.). The tool is now fully self-contained — no API keys required.
+
+Changes from upstream
+-----------
+
+| Removed dependency | Replacement |
+|---|---|
+| Google Maps JS API | [Leaflet.js](https://leafletjs.com/) + [OpenStreetMap](https://www.openstreetmap.org/) tiles |
+| Google Geocoding API | [Nominatim](https://nominatim.openstreetmap.org/) (OpenStreetMap) |
+| Google Geolocation API | Browser native geolocation |
+| Google Directions API | [OSRM](https://project-osrm.org/) public router + straight-line fallback |
+| ngrok | Removed (use your own tunneling if needed) |
+| ipgeolocation.io / ipinfo.io | Local `/geoip` endpoint with [MaxMind GeoLite2](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) |
+| Google URL Shortener (goo.gl) | Removed (API dead since 2019) |
+| Wikimedia Commons (speed test image) | Local `speedtest.bin` file |
+| cdnjs.cloudflare.com (IE polyfills) | Removed (IE 6-9 no longer supported) |
+| Google connectivity check | Socket to `1.1.1.1:53` |
+| GitHub version check | Removed |
+| responsiveVoice.js | [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) (built into modern browsers) |
 
 Some benefits
 -----------
@@ -25,20 +45,15 @@ Some benefits
 ![](https://lh6.googleusercontent.com/DtQiYYLoL9di3LPcSSTCZ3AuVMlQaNcDkBdv_fZFX7rztjg_epWmIaA2AlGsWCr5Mwr2nVfLcsg1I5PXEcx87ErLS8JaruvRsEUIkScydXA3JhvbsmJov7qxbKooGgD5u32kmBHW)
 
 * **PROCESS HOOKS:** Manages social engineering attacks or processes in the target's browser.
-    
+
   --- **SEVERAL:** You can issue a phishing attack of any domain or service in real time as well as send malicious files to compromise the device of a target.
-    
+
 
   ---  **INJECT JS:** You keep the JavaScript code running free in real time, so you can manage the execution of a **keylogger** or your own custom functions in JS which will be reflected in the target's browser.
-    
-  ---   **SPEECH:** A process of audio creation is maintained which is played in the browser of the target, by means of this you can execute personalized messages in different voices with languages in Spanish and English.
-    
 
-  
+  ---   **SPEECH:** A process of audio creation is maintained which is played in the browser of the target, by means of this you can execute personalized messages in different voices with languages in Spanish and English. *(Now powered by the browser's native Web Speech API — no external library needed.)*
 
-* **PUBLIC NETWORK TUNNEL:** Trape has its own **API** that is linked to [ngrok.com](https://ngrok.com) to allow the automatic management of public network tunnels; So you can publish the content of your trape server which is executed locally to the Internet, to manage hooks or public attacks.
 
-![](https://lh5.googleusercontent.com/_f3zaCeZya_5AKaCoaPexyJVpNA7fiRqYQ9WBRiGLsHcx1W5V61V-VENeIRF2QbqvpenyOJ1AYyreTmOr2MWbf9PYu4qXF-tbYWi7qp6ZWeOwvoG3LYUdpjp3pAK9mIAQZzPJwAO)
 
 
 * **CLICK ATTACK TO GET CREDENTIALS:** Automatically obtains the target credentials, recognizing your connection availability on a social network or Internet service.
@@ -66,14 +81,14 @@ Session recognition is one of trape most interesting attractions, since you as a
 ![](https://lh6.googleusercontent.com/IFxIh7Eemr63kycj2eBzJYvevCzLH5DkQGWUKzPx_Okn4WoExPl0LR7Qj-cSc0WF0rs9Ew6DJMwcyirZd0kdfLpdrqQ2700P_xdxW7wpZ7K6OWi8pluLKivHtU45HD4VtyM0lLwh)
 
 * **USABILITY:** You can delete logs and view alerts for each process or action you run against each target.
- 
+
  ![](https://lh4.googleusercontent.com/dXx1lRG2z-ZlSIlQyTx_ra7sbkgKG2jeqGjIt86GebFiAaZyFDA4vy3QBLACd-1wOz4zdSIARWvo3hK2mEvrSJ6VPDSiOZgMLB4rUYXKDHrone0xIB3bwhAKPnsJUcuKW9xf_-sG)
- 
+
 How to use it
 -------
  First unload the tool.
 ```
-git clone https://github.com/jofpin/trape.git
+git clone https://github.com/AEGISL0L/trape.git
 cd trape
 python3 trape.py -h
 ```
@@ -87,7 +102,7 @@ Example of execution
 Example: python3 trape.py --url http://example.com --port 8080
 ```
 
-If you face some problems installing the tool, it is probably due to Python versions conflicts, you should run a Python 2.7 environment :
+If you face some problems installing the tool, it is probably due to Python versions conflicts, you should run a Python 3 virtual environment:
 
 ```
 pip3 install virtualenv
@@ -97,27 +112,34 @@ pip3 install -r requirements.txt
 python3 trape.py -h
 ```
 
+GeoIP setup (optional)
+-------
+For IP geolocation, download the free **MaxMind GeoLite2-City** database:
+
+1. Register at [MaxMind](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data)
+2. Download `GeoLite2-City.mmdb`
+3. Place it in the trape root directory (or specify a custom path during first-run configuration)
+
+If no `.mmdb` file is present, GeoIP lookups will return "Unknown" — the tool still works.
+
 **HELP  AND OPTIONS**
 ```
 user:~$ python3 trape.py --help
-usage: python3 trape.py -u <> -p <> [-h] [-v] [-u URL] [-p PORT]
+usage: python3 trape.py -u <<Url>> -p <<Port>> [-h] [-u URL] [-p PORT]
                                               [-ak ACCESSKEY] [-l LOCAL]
-                                              [--update] [-n] [-ic INJC]
+                                              [-ic INJC] [-ud]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -v, --version         show program's version number and exit
   -u URL, --url URL     Put the web page url to clone
   -p PORT, --port PORT  Insert your port
   -ak ACCESSKEY, --accesskey ACCESSKEY
                         Insert your custom key access
   -l LOCAL, --local LOCAL
                         Insert your home file
-  -n, --ngrok           Insert your ngrok Authtoken
   -ic INJC, --injectcode INJC
                         Insert your custom REST API path
-  -ud UPDATE, --update UPDATE
-                        Update trape to the latest version
+  -ud, --update         Update trape to the latest version
 ```
 
 **--url**  In this option you add the URL you want to clone, which works as a decoy.
@@ -129,8 +151,6 @@ optional arguments:
 **--injectcode**  trape contains a  **REST API**  to play anywhere, using this option you can customize the name of the file to include, if it does not, generates a random name allusive to a token.
 
 **--local**  Using this option you can call a local **HTML file**, this is the replacement of the  **--url**  option made to run a local lure in trape.
-
-**--ngrok**  In this option you can enter a token, to run at the time of a process. This would replace the token saved in configurations.
 
 **--version**  You can see the version number of trape.
 
@@ -151,8 +171,8 @@ This development and others, the participants will be mentioned with name, Twitt
 
 * **CREATOR**
 
-  --- Jose Pino - [@jofpin](https://twitter.com/jofpin) - (**Security Researcher**) 
- 
+  --- Jose Pino - [@jofpin](https://twitter.com/jofpin) - (**Security Researcher**)
+
 
 Happy hacking!
 -------
@@ -163,6 +183,6 @@ I invite you, if you use this tool helps to share, collaborate. Let's make the I
 
 The content of this project itself is licensed under the [Creative Commons Attribution 3.0 license](http://creativecommons.org/licenses/by/3.0/us/deed.en_US), and the underlying source code used to format and display that content is licensed under the [MIT license](http://opensource.org/licenses/mit-license.php).
 
-Copyright, 2018 by [Jose Pino](https://twitter.com/jofpin) 
+Copyright, 2018 by [Jose Pino](https://twitter.com/jofpin)
 
 -------------
