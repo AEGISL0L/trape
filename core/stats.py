@@ -164,8 +164,8 @@ def style_redirect(CSSFile):
 
 @app.route("/static/files/<File>")
 def file_redirect(File):
-    uploads = os.path.join(os.getcwd(), './')
-    return send_from_directory(directory=uploads, filename=File)
+    uploads = os.path.join(os.getcwd(), 'static', 'files')
+    return send_from_directory(uploads, File)
 
 @app.route("/geoip")
 def geoip_lookup():

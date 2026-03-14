@@ -138,7 +138,11 @@ class Database(object):
         elif type == 'connection_victim':
             return ("UPDATE geo SET connection = ?, refer = ? WHERE id = ?", (data[1], data[2], data[0]))
         elif type == 'update_battery':
-            return ("UPDATE victims_battery SET " + data[2] + " = ? WHERE id = ?", (data[1], data[0]))
+            allowed_columns = {'charging', 'time_c', 'time_d', 'level'}
+            col = data[2]
+            if col not in allowed_columns:
+                return False
+            return ("UPDATE victims_battery SET " + col + " = ? WHERE id = ?", (data[1], data[0]))
         elif type == 'update_navigationmode':
             return ("UPDATE victims_data SET navigation_mode = ?, donottrack = ? WHERE id = ?", (data[1], data[2], data[0]))
         elif type == 'update_lastping':

@@ -11,14 +11,16 @@ Trape is an **OSINT** analysis and research tool, which allows people to track a
 
 At the beginning of the year 2018 was presented at **BlackHat Arsenal in Singapore**: https://www.blackhat.com/asia-18/arsenal.html#jose-pino and in multiple security events worldwide.
 
-> **Note:** This fork removes all dependencies on external proprietary services (Google Maps, ngrok, ipgeolocation.io, etc.). The tool is now fully self-contained — no API keys required.
+> **Note:** This fork removes all dependencies on external proprietary services (Google Maps, ngrok, ipgeolocation.io, etc.) and modernizes the stack for **Python 3.9+ / Flask 3.x** (2026). The tool is now fully self-contained — no API keys required.
 
 Changes from upstream
 -----------
 
+### Removed external dependencies
+
 | Removed dependency | Replacement |
 |---|---|
-| Google Maps JS API | [Leaflet.js](https://leafletjs.com/) + [OpenStreetMap](https://www.openstreetmap.org/) tiles |
+| Google Maps JS API | [Leaflet.js 1.9.4](https://leafletjs.com/) + [OpenStreetMap](https://www.openstreetmap.org/) tiles |
 | Google Geocoding API | [Nominatim](https://nominatim.openstreetmap.org/) (OpenStreetMap) |
 | Google Geolocation API | Browser native geolocation |
 | Google Directions API | [OSRM](https://project-osrm.org/) public router + straight-line fallback |
@@ -30,6 +32,24 @@ Changes from upstream
 | Google connectivity check | Socket to `1.1.1.1:53` |
 | GitHub version check | Removed |
 | responsiveVoice.js | [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) (built into modern browsers) |
+
+### Modernized stack (2026)
+
+| Component | Old | New |
+|---|---|---|
+| Python | 2.7 / 3.x | **3.9+** required |
+| Flask | 1.x | **3.1+** |
+| Werkzeug | 1.x | **3.0+** |
+| Flask-SocketIO | 4.x | **5.3+** |
+| Async mode | eventlet (deprecated) | **gevent** + **simple-websocket** |
+| Maps | Google Maps JS API | **Leaflet.js 1.9.4** |
+| GeoIP | ipgeolocation.io (external) | **MaxMind GeoLite2** (local) |
+
+### Security fixes
+
+- **CVE-2019-13489** — Fixed blind SQL injection in `update_battery` (column name now validated against a whitelist)
+- Deprecated `send_from_directory(filename=...)` replaced with modern `send_from_directory(directory, path)` API
+- Removed dead reference to `trape.validateLicense.terminate()`
 
 Some benefits
 -----------
@@ -92,21 +112,20 @@ git clone https://github.com/AEGISL0L/trape.git
 cd trape
 python3 trape.py -h
 ```
-If it does not work, try to install all the libraries that are located in the file **requirements.txt**
+Install dependencies (requires **Python 3.9+**):
 ```
 pip3 install -r requirements.txt
 ```
 
 Example of execution
 ```
-Example: python3 trape.py --url http://example.com --port 8080
+python3 trape.py --url http://example.com --port 8080
 ```
 
-If you face some problems installing the tool, it is probably due to Python versions conflicts, you should run a Python 3 virtual environment:
+If you face some problems installing the tool, use a virtual environment:
 
 ```
-pip3 install virtualenv
-virtualenv -p /usr/bin/python3 trape_env
+python3 -m venv trape_env
 source trape_env/bin/activate
 pip3 install -r requirements.txt
 python3 trape.py -h
