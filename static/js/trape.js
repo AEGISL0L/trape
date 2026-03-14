@@ -2,7 +2,7 @@ var user_active = null;
 $(document).ready(function() {
 
   namespace = '/trape';
-  var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+  var socket = io(namespace);
 
   var Trape = {
     self: this,

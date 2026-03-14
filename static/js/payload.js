@@ -50,9 +50,9 @@ function createSockets(){
     if (typeof(io) != 'undefined') {
         namespace = '/trape';
         if (window.serverPath == ''){
-            socketTrape = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+            socketTrape = io(namespace);
         } else{
-            socketTrape = io.connect(window.serverPath + namespace);
+            socketTrape = io(window.serverPath + namespace);
         }
     }
 
