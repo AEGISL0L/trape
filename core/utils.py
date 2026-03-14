@@ -18,7 +18,7 @@ import sys
 import os
 import socket
 import time
-import requests, json
+import json
 from colorama import init , Style,Fore
 import http.client
 init()
@@ -144,15 +144,6 @@ class utils:
         except Exception as e:
             c.close()
             return False
-
-    # Goo.gl shortener service
-    @staticmethod
-    def gShortener(api_key, p_url):
-        url = "https://www.googleapis.com/urlshortener/v1/url?key=" + api_key
-        payload = '{"longUrl":"' + p_url + '"}'
-        headers = {'content-type': 'application/json'}
-        r = requests.post(url, data=payload, headers=headers)
-        return r
 
     # Autocompletion
     @staticmethod

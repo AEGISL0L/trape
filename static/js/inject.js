@@ -5,7 +5,6 @@
 		'[HOST_ADDRESS]/static/js/[LURE_SRC]',
 		'[HOST_ADDRESS]/static/js/[CUSTOM_SRC]'
 	];
-	window.gMapsApiKey = "[YOUR_GMAPS_API_KEY]";
 	var imported = {};
 	var idx = 0;
 

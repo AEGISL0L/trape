@@ -77,13 +77,7 @@ def error_handler(e):
 
 @app.route("/" + trape.home_path)
 def home():
-    gMaps_free_api_key = 'AIzaSyBUPHAjZl3n8Eza66ka6B78iVyPteC5MgM'
-    if (trape.gmaps != ''):
-        gMaps_free_api_key = trape.gmaps
-
-    shorten_api = 'AIzaSyCPzcppCT27KTHnxAIQvYhtvB_l8sKGYBs'
-
-    html = trape.injectCSS_Paths(render_template("home.html", async_mode=socketio.async_mode).replace('[OWN_API_KEY_HERE]', gMaps_free_api_key).replace('[LIBS_SRC]', trape.JSFiles[1]['src']).replace('[TRAPE_SRC]', trape.JSFiles[4]['src']))
+    html = trape.injectCSS_Paths(render_template("home.html", async_mode=socketio.async_mode).replace('[LIBS_SRC]', trape.JSFiles[1]['src']).replace('[TRAPE_SRC]', trape.JSFiles[4]['src']).replace('[LEAFLET_SRC]', trape.JSFiles[7]['src']))
     return html
 
 if __name__ == 'core.sockets':
