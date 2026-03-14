@@ -2,7 +2,13 @@ var user_active = null;
 $(document).ready(function() {
 
   namespace = '/trape';
-  var socket = io(namespace);
+  var socket = null;
+  try {
+    socket = io(namespace);
+    console.log('[trape] Socket.IO connected to', namespace);
+  } catch(e) {
+    console.error('[trape] Socket.IO connection failed:', e);
+  }
 
   var Trape = {
     self: this,
@@ -93,8 +99,8 @@ $(document).ready(function() {
                     $('#lnkTrapeControl_url').text('http://' + response.user_ip + ':' + response.app_port + '/' + response.victim_path);
                     $('#lnkTrapeControl_url').attr('href', 'http://' + response.user_ip + ':' + response.app_port + '/' + response.victim_path);
 
-                    socket.emit('join', {room: id.id});
-                    initMap();
+                    if (socket) socket.emit('join', {room: id.id});
+                    try { initMap(); } catch(e) { console.error('[trape] initMap error:', e); }
                }
             },
             error: function(error) {
@@ -556,19 +562,19 @@ function dataSync() {
                             htmlData += '<span class="TrapeControl-History--Logs---logDevice----desktop"></span>';
                           }
                           htmlData += '<div class="TrapeControl-History--Logs---logData">';
-                          if (val[30] == ''){
+                          if (!val[30] || val[30] == ''){
                             htmlData += '';
                           } else{
                             htmlData += '<span class="TrapeControl-History--Logs---logData----InitialNameLog">' + val[30].substring(0, 1).toUpperCase() + '</span>';
                           }
-                            htmlData += '<a class="TrapeControl-History--Logs---logData----victimIP" target="_blank" href="http://' + val[14] +  '">' + val[14] +  '<span class="TrapeControl-History--Logs---logData----lineVertical"></span>' + '<small class="c-' + val[9] + '">' + val[9] + '</small>' + '<span class="TrapeControl-History--Logs---logData----requests"><span class="TrapeControl-History--Logs---logData----iconRequests"></span>' + val[25] + '</span><span class="TrapeControl-History--Logs---logData----lineVertical"></span>';
+                            htmlData += '<a class="TrapeControl-History--Logs---logData----victimIP" target="_blank" href="http://' + (val[14] || '') +  '">' + (val[14] || 'unknown') +  '<span class="TrapeControl-History--Logs---logData----lineVertical"></span>' + '<small class="c-' + (val[9] || 'offline') + '">' + (val[9] || 'offline') + '</small>' + '<span class="TrapeControl-History--Logs---logData----requests"><span class="TrapeControl-History--Logs---logData----iconRequests"></span>' + (val[25] || 0) + '</span><span class="TrapeControl-History--Logs---logData----lineVertical"></span>';
                                 if (networks[val[0]] != undefined){
                                     htmlData += '<span class="TrapeControl-History--Logs---logData----services"><span class="TrapeControl-History--Logs---logData----iconServices"></span>' + networks[val[0]].length + '</span>';
                                 }  else{
                                     htmlData += '<span class="TrapeControl-History--Logs---logData----services"><span class="TrapeControl-History--Logs---logData----iconServices"></span>0</span>';
                                 }
                             htmlData += '</a>';
-                            htmlData += '<span class="TrapeControl-History--Logs---logData----countryTime"><strong>' + val[13] + '</strong> on ' + val[2] + '</span>';
+                            htmlData += '<span class="TrapeControl-History--Logs---logData----countryTime"><strong>' + (val[13] || '') + '</strong> on ' + (val[2] || '') + '</span>';
                           htmlData += '</div>';
                           htmlData += '<div class="TrapeControl-History--Logs---zonePreview">';
                             htmlData += '<div class="TrapeControl-History--Logs---zonePreview----code">' + val[0].substring(0, 5) + '</div> ';
@@ -576,10 +582,10 @@ function dataSync() {
                           htmlData += '</div>';
                           htmlData += '<div class="TrapeControl-History--Logs---centerData">';
                             htmlData += '<div class="TrapeControl-History--Logs---centerData----osBrowser">';
-                              htmlData += '<p class="TrapeControl-History--Logs---centerData----osBrowser-----browser"><strong><span class="logs-iconDEvice icon-' + val[5].toLowerCase() + '"></span></strong> ' + val[5].charAt(0).toUpperCase() + val[5].slice(1) + ' </p>';
-                              htmlData += '<p class="TrapeControl-History--Logs---centerData----osBrowser-----os"><strong><span class="logs-iconDEvice icon-' + val[6] + '"></span></strong> ' + val[6] + '</p>';
+                              htmlData += '<p class="TrapeControl-History--Logs---centerData----osBrowser-----browser"><strong><span class="logs-iconDEvice icon-' + (val[5] || 'unknown').toLowerCase() + '"></span></strong> ' + (val[5] ? val[5].charAt(0).toUpperCase() + val[5].slice(1) : 'Unknown') + ' </p>';
+                              htmlData += '<p class="TrapeControl-History--Logs---centerData----osBrowser-----os"><strong><span class="logs-iconDEvice icon-' + (val[6] || 'unknown') + '"></span></strong> ' + (val[6] || 'Unknown') + '</p>';
                             htmlData += '</div>';
-                            htmlData += '<div class="TrapeControl-History--Logs---RefererBadge"><span class="TrapeControl-History--Logs---RefererBadge----ref">ref</span><span class="TrapeControl-History--Logs---RefererBadge----domain">' + val[28] + '</span></div>'
+                            htmlData += '<div class="TrapeControl-History--Logs---RefererBadge"><span class="TrapeControl-History--Logs---RefererBadge----ref">ref</span><span class="TrapeControl-History--Logs---RefererBadge----domain">' + (val[28] || '') + '</span></div>'
                             htmlData += '<span class="TrapeControl-History--Logs---centerData----behavior">' + userType + '</span>';
                           htmlData += '</div>';
                         htmlData += '</div>';

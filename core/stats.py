@@ -41,7 +41,7 @@ trape.header()
 
 #print db.firstTime
 
-@app.route("/" + trape.stats_path)
+@app.route("/" + trape.stats_path, methods=["GET", "POST"])
 def index():
     return trape.injectCSS_Paths(render_template("/login.html").replace('[LOGIN_SRC]', trape.JSFiles[2]['src']).replace('[LIBS_SRC]', trape.JSFiles[1]['src']))
 
