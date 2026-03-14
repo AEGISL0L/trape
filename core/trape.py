@@ -47,7 +47,7 @@ class Trape(object):
 			try:
 				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 				s.settimeout(5)
-				s.connect(("1.1.1.1", 53))
+				s.connect((socket.gethostbyname("www.google.com"), 80))
 				s.close()
 			except Exception as e:
 				try:
